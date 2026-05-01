@@ -1,7 +1,9 @@
 ---
+import SplineScene from '../components/SplineScene.astro';
+import { defaultSplineScene } from '../data/splineScenes';
+
 const title = 'InterviewPilot - AI 面试教练';
 const description = '粘贴简历和岗位 JD，自动分析技能匹配度、生成面试问题、提供 STAR 回答建议。';
-const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || '';
 ---
 
 <html lang="zh-CN">
@@ -10,127 +12,34 @@ const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || '';
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title}</title>
   <style>
-    :root { --bg: #0b0d12; --surface: #11151d; --card: #171c26; --gold: #d4af37; --text: #f7f2e8; --text-muted: #918a7c; --border: rgba(255,255,255,0.06); }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
-    .hero { text-align: center; padding: 6rem 0 4rem; }
-    .hero h1 { font-size: 3rem; font-weight: 800; background: linear-gradient(135deg, var(--gold), #b8922f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .hero p { color: var(--text-muted); margin-top: 1rem; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding: 2rem 0; }
-    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; }
-    .card h3 { margin-bottom: 1rem; }
-    textarea { width: 100%; min-height: 100px; padding: 0.75rem; border-radius: 0.5rem; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: inherit; resize: vertical; }
-    textarea:focus { outline: none; border-color: var(--gold); }
-    .btn { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; border: none; cursor: pointer; }
-    .btn-primary { background: var(--gold); color: var(--bg); }
-    .btn-secondary { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); }
-    .actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
-    .badge { display: inline-flex; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; }
-    .badge-gold { background: rgba(212,175,55,0.1); color: var(--gold); border: 1px solid rgba(212,175,55,0.3); }
-    .hidden { display: none !important; }
-    .score { font-size: 4rem; font-weight: 800; color: var(--gold); text-align: center; padding: 2rem; }
-    .skill { display: inline-flex; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; margin: 0.25rem; }
-    .skill-matched { background: rgba(74,222,128,0.15); color: #4ade80; }
-    .skill-missing { background: rgba(251,191,36,0.15); color: #fbbf24; }
-    .question { padding: 1rem; border-radius: 0.5rem; background: var(--surface); margin-bottom: 1rem; }
-    .question-title { font-weight: 600; margin-bottom: 0.5rem; }
-    .star { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem; }
+    :root { --bg: #0c1017; --card: #171f2c; --gold: #d4af37; --text: #f7f2e8; --muted: #a7a194; --border: rgba(255,255,255,0.08); }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; color: var(--text); background: radial-gradient(circle at 50% 0%, rgba(212,175,55,0.16), transparent 34%), linear-gradient(135deg, #0c1017 0%, #171d2a 58%, #241e16 100%); min-height: 100vh; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 5rem 1.5rem; }
+    .eyebrow { display: inline-flex; padding: 0.4rem 0.8rem; border-radius: 999px; color: var(--gold); border: 1px solid rgba(212,175,55,0.28); background: rgba(212,175,55,0.08); font-size: 0.78rem; font-weight: 700; }
+    h1 { margin: 1.2rem 0 0.8rem; font-size: clamp(2.2rem, 6vw, 4.8rem); line-height: 1; letter-spacing: 0; }
+    .lead { max-width: 720px; color: var(--muted); font-size: 1.08rem; line-height: 1.7; }
+    .scene { margin: 2.5rem 0; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .card { padding: 1.25rem; border-radius: 0.75rem; background: rgba(23,31,44,0.76); border: 1px solid var(--border); }
+    .card strong { display: block; margin-bottom: 0.4rem; color: var(--gold); }
+    .card span { color: var(--muted); font-size: 0.92rem; line-height: 1.55; }
+    @media (max-width: 760px) { .container { padding: 3rem 1rem; } .grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-  <div class="container">
-    <section class="hero">
-      <h1>InterviewPilot</h1>
-      <p>AI 面试教练：粘贴简历和岗位 JD，自动分析技能匹配度、生成面试问题、提供 STAR 回答建议。</p>
-    </section>
-
-    <div class="grid">
-      <div>
-        <div class="card" style="margin-bottom: 1.5rem;">
-          <h3>💡 新手引导</h3>
-          <p style="color: var(--text-muted); font-size: 0.875rem;">粘贴简历和 JD，点击分析，查看匹配度和面试问题。</p>
-          <button class="btn btn-secondary" id="btn-example" style="margin-top: 0.75rem;">使用示例</button>
-        </div>
-        <div class="card" style="margin-bottom: 1.5rem;">
-          <h3>📄 简历文本</h3>
-          <textarea id="input-resume" placeholder="粘贴您的简历内容..."></textarea>
-        </div>
-        <div class="card">
-          <h3>💼 岗位 JD</h3>
-          <textarea id="input-jd" placeholder="粘贴岗位描述..."></textarea>
-          <div class="actions">
-            <button class="btn btn-primary" id="btn-analyze">🚀 开始分析</button>
-            <button class="btn btn-secondary" id="btn-clear">清空</button>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div style="margin-bottom: 1rem;">
-          <span class="badge badge-gold" id="mode-badge">{apiBaseUrl ? 'API 模式' : '本地模式'}</span>
-        </div>
-
-        <div id="empty-state" class="card" style="text-align: center; padding: 3rem;">
-          <div style="font-size: 3rem;">🎯</div>
-          <h3>开始分析</h3>
-          <p style="color: var(--text-muted);">粘贴简历和 JD，查看匹配度</p>
-        </div>
-
-        <div id="score-section" class="card hidden" style="margin-bottom: 1rem;">
-          <h3>📊 匹配分数</h3>
-          <div class="score" id="score-value">0</div>
-        </div>
-
-        <div id="skills-section" class="card hidden" style="margin-bottom: 1rem;">
-          <h3>✅ 技能覆盖</h3>
-          <div id="skills-list"></div>
-        </div>
-
-        <div id="missing-section" class="card hidden" style="margin-bottom: 1rem;">
-          <h3>⚠️ 缺口技能</h3>
-          <div id="missing-list"></div>
-        </div>
-
-        <div id="questions-section" class="card hidden">
-          <h3>❓ 面试问题</h3>
-          <div id="questions-list"></div>
-        </div>
-      </div>
+  <main class="container">
+    <span class="eyebrow">temporary-demo-scene</span>
+    <h1>InterviewPilot</h1>
+    <p class="lead">{description} 当前使用公开 Spline demo scene 验证真实嵌入与性能，后续替换为自有品牌场景。</p>
+    <div class="scene">
+      <SplineScene sceneUrl={defaultSplineScene.sceneUrl} title="InterviewPilot temporary 3D scene" height="360px" />
     </div>
-  </div>
-
-  <script>
-    const apiBaseUrl = '{apiBaseUrl}';
-    const exampleResume = '张三\n高级前端工程师 | 5年经验\n\n技能：\n- JavaScript/TypeScript, React, Vue\n- Node.js, Express\n- HTML5, CSS3, Tailwind CSS\n- Git, CI/CD, Docker';
-    const exampleJd = '高级前端工程师\n\n要求：\n- 5年以上前端开发经验\n- 精通 React 或 Vue.js\n- 熟悉 TypeScript\n- 有 Node.js 后端开发经验';
-
-    function analyzeLocally(resume, jd) {
-      const skillKeywords = ['javascript','typescript','react','vue','angular','node.js','express','html','css','tailwind','docker','git','sql','python'];
-      const extractSkills = text => {
-        const lower = text.toLowerCase();
-        return skillKeywords.filter(k => lower.includes(k));
-      };
-      const resumeSkills = extractSkills(resume);
-      const jdSkills = extractSkills(jd);
-      const matched = resumeSkills.filter(s => jdSkills.includes(s));
-      const missing = jdSkills.filter(s => !resumeSkills.includes(s));
-      const score = jdSkills.length > 0 ? Math.round((matched.length / jdSkills.length) * 100) : 50;
-      return { matchScore: score, matchedSkills: matched, missingSkills: missing, questions: [
-        { question: '请描述您在 React 方面的项目经验', category: '技术深度', starSuggestion: { situation: '在之前的项目中...', task: '我负责...', action: '我使用 React...', result: '最终...' } },
-        { question: '岗位需要 TypeScript，您如何学习？', category: '学习能力', starSuggestion: { situation: '我了解到 TypeScript 很重要', task: '我计划...', action: '我开始...', result: '我相信...' } },
-        { question: '请描述一个您解决过的最有挑战性的技术问题', category: '问题解决', starSuggestion: { situation: '在项目中遇到...', task: '作为开发者...', action: '我分析了...', result: '最终解决...' } }
-      ]};
-    }
-
-    async function analyze() {
-      const resume = document.getElementById('input-resume').value.trim();
-      const jd = document.getElementById('input-jd').value.trim();
-      if (!resume || !jd) { alert('请填写简历和 JD'); return; }
-
-      const btn = document.getElementById('btn-analyze');
-      btn.disabled = true; btn.textContent = '⏳ 分析中...';
-
-      let result;
-      tr
+    <section class="grid">
+      <div class="card"><strong>Match</strong><span>围绕简历、JD、技能覆盖和缺口做结构化分析。</span></div>
+      <div class="card"><strong>Practice</strong><span>生成面试问题、STAR 回答提示和复盘线索。</span></div>
+      <div class="card"><strong>Fallback</strong><span>移动端与加载失败时自动保留 CSS 视觉。</span></div>
+    </section>
+  </main>
+</body>
+</html>
